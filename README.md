@@ -1,7 +1,7 @@
 # Logistic-Regression
 
 <h2>A Logistic regression model build to predict whether a customer will churn or not based on various features such as tenure, contract, payment method, gender and many other features.</h2>
-<h3>The significant features are selected using Recursive Feature Selection and also using Variance Inflation Factor & p-values</h3>
+<h3>The significant features are selected using Recursive Feature Selection and also using Variance Inflation Factor & p-values i.e, a combined approach of features selection</h3>
 <h3>Data :</h3>
 <pre>
      customerID  tenure PhoneService        Contract  ... DeviceProtection TechSupport  StreamingTV StreamingMovies
