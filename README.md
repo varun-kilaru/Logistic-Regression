@@ -50,8 +50,8 @@ StreamingMovies_Yes                       0.2428      0.093      2.598      0.00
  [ 288  999]]
  </pre>
 <h3>Accuracy :  0.7700121901665989</h3>
-<h3>Specificity :  0.7678129298486933</h3>
 <h3>Sensitivity :  0.7762237762237763</h3>
+<h3>Specificity :  0.7678129298486933</h3>
 <h3>True Positive Rate :  0.7762237762237763</h3>
 <h3> ROC Curve :</h3>
 <img src="ROC_curve.png">
