@@ -138,6 +138,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, random
 #feature scaling using standardization
 scaler = StandardScaler()
 X_train[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.fit_transform(X_train[['tenure', 'MonthlyCharges', 'TotalCharges']])
+X_test[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(X_test[['tenure', 'MonthlyCharges', 'TotalCharges']])
 # print(X_train.head())
 
 #checking Churn rate(i.e class imbalancing)
@@ -218,7 +219,74 @@ print('\nVIF Table:\n',vif)
 y_train_pred = model.predict(X_train_sm)
 y_train_pred = y_train_pred.values.reshape(-1)
 
-predict_df = pd.DataFrame({'Actual': y_train.values, 'Probability': y_train_pred})
+predictA_df = pd.DataFrame({'Actual': y_train.values, 'Probability': y_train_pred})
+predictA_df['Predicted'] = predictA_df['Probability'].map(lambda x: 1 if x>0.3 else 0)
+print('\nPrediction Table :\n',predictA_df)
+
+#evaluating model
+from sklearn import metrics
+
+''' confusion matrix
+___________________________________________
+|    Actual       |       Predicted       |
+|_________________|_______________________|
+|not-churn        |   not-churn | churn   |
+|  2791+844       |      2791  |  844     |
+|-----------------|-----------------------|
+|churn            |   not-churn | churn   |
+|   288+999       |      288    |  999    |
+|_________________|_______________________|'''
+
+confusion_matrixA = metrics.confusion_matrix(predictA_df.Actual, predictA_df.Predicted)
+print('Confusion Matrix : \n',confusion_matrixA)
+
+#accuracy
+acc = metrics.accuracy_score(predictA_df.Actual, predictA_df.Predicted)
+print('Accuracy : ',acc)
+#specificity
+specificity = confusion_matrixA[0,0]/(confusion_matrixA[0,0]+confusion_matrixA[0,1])
+print('Specificity : ',specificity)
+#sensitivity
+sensitivity = confusion_matrixA[1,1]/(confusion_matrixA[1,0]+confusion_matrixA[1,1])
+print('Sensitivity : ',sensitivity)
+#True Positive Rate
+tpr = confusion_matrixA[1,1]/(confusion_matrixA[1,0]+confusion_matrixA[1,1])
+print('True Positive Rate : ',tpr)
+
+''' Here, we need to choose the threshold value as the
+value for which the accuracy, sensitivity and specificity
+are almost equal.'''
+'''finding the cut off to predict yes/no based on probabilities(i.e,
+reason for choosing the probability 0.3 as cut_off)'''
+cutoff_df = pd.DataFrame( columns = ['probability','accuracy','sensitivity','specificity'])
+from sklearn.metrics import confusion_matrix
+
+# TP = confusion[1,1] # true positive
+# TN = confusion[0,0] # true negatives
+# FP = confusion[0,1] # false positives
+# FN = confusion[1,0] # false negatives
+
+num = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+for i in num:
+    pred_labels = predictA_df['Probability'].map(lambda x: 1 if x>i else 0)
+    cm1 = metrics.confusion_matrix(predictA_df.Actual, pred_labels)
+    total1=sum(sum(cm1))
+    accuracy = (cm1[0,0]+cm1[1,1])/total1
+
+    speci = cm1[0,0]/(cm1[0,0]+cm1[0,1])
+    sensi = cm1[1,1]/(cm1[1,0]+cm1[1,1])
+    cutoff_df.loc[i] =[ i ,accuracy,sensi,speci]
+print('\nTable to choose threshold :\n',cutoff_df)
+
+#predicting the test data
+X_test = X_test[selected_features]
+X_test = X_test.drop(['MonthlyCharges', 'TotalCharges'], axis=1)
+
+X_test_sm = sm.add_constant(X_test)
+y_test_pred = model.predict(X_test_sm)
+y_test_pred = y_test_pred.values.reshape(-1)
+
+predict_df = pd.DataFrame({'Actual': y_test.values, 'Probability': y_test_pred})
 predict_df['Predicted'] = predict_df['Probability'].map(lambda x: 1 if x>0.3 else 0)
 print('\nPrediction Table :\n',predict_df)
 
@@ -251,28 +319,3 @@ print('Sensitivity : ',sensitivity)
 #True Positive Rate
 tpr = confusion_matrix[1,1]/(confusion_matrix[1,0]+confusion_matrix[1,1])
 print('True Positive Rate : ',tpr)
-
-''' Here, we need to choose the threshold value as the
-value for which the accuracy, sensitivity and specificity
-are almost equal.'''
-'''finding the cut off to predict yes/no based on probabilities(i.e,
-reason for choosing the probability 0.3 as cut_off)'''
-cutoff_df = pd.DataFrame( columns = ['probability','accuracy','sensitivity','specificity'])
-from sklearn.metrics import confusion_matrix
-
-# TP = confusion[1,1] # true positive
-# TN = confusion[0,0] # true negatives
-# FP = confusion[0,1] # false positives
-# FN = confusion[1,0] # false negatives
-
-num = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-for i in num:
-    pred_labels = predict_df['Probability'].map(lambda x: 1 if x>i else 0)
-    cm1 = metrics.confusion_matrix(predict_df.Actual, pred_labels)
-    total1=sum(sum(cm1))
-    accuracy = (cm1[0,0]+cm1[1,1])/total1
-
-    speci = cm1[0,0]/(cm1[0,0]+cm1[0,1])
-    sensi = cm1[1,1]/(cm1[1,0]+cm1[1,1])
-    cutoff_df.loc[i] =[ i ,accuracy,sensi,speci]
-print('\nTable to choose threshold :\n',cutoff_df)
